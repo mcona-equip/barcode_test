@@ -6,13 +6,15 @@
 
   <meta charset="UTF-8" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"
+/>
 
   <title>바코드 스캔 (OCR)</title>
 
   <style>
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding:
+0; box-sizing: border-box; }
 
     body {
 
@@ -20,7 +22,8 @@
 
       color: #fff;
 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+sans-serif;
 
       height: 100dvh;
 
@@ -50,7 +53,8 @@
 
     }
 
-    #header h1 { font-size: 16px; font-weight: 600; }
+    #header h1 { font-size: 16px;
+font-weight: 600; }
 
     #btn-close {
 
@@ -118,7 +122,8 @@
 
       border-radius: 8px;
 
-      box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+      box-shadow: 0 0 0
+9999px rgba(0,0,0,0.45);
 
       transition: border-color 0.2s;
 
@@ -136,23 +141,27 @@
 
       height: 2px;
 
-      background: linear-gradient(90deg, transparent, #22c55e, transparent);
+      background: linear-gradient(90deg, transparent,
+#22c55e, transparent);
 
       animation: scanAnim 1.8s ease-in-out infinite;
 
     }
 
-    #scan-line.paused { animation-play-state: paused; opacity: 0; }
+    #scan-line.paused { animation-play-state: paused; opacity:
+0; }
 
     @keyframes scanAnim {
 
-      0%   { top: 8px; opacity: 0; }
+      0%   { top: 8px; opacity:
+0; }
 
       10%  { opacity: 1; }
 
       90%  { opacity: 1; }
 
-      100% { top: calc(100% - 10px); opacity: 0; }
+      100% { top: calc(100%
+- 10px); opacity: 0; }
 
     }
 
@@ -234,7 +243,9 @@
 
     }
 
-    #footer p { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 10px; }
+    #footer p { font-size: 12px;
+color: rgba(255,255,255,0.5);
+margin-bottom: 10px; }
 
     #btn-manual {
 
@@ -282,7 +293,9 @@
 
     #result-overlay.show { display: flex; }
 
-    #result-label { font-size: 12px; color: rgba(255,255,255,0.5); }
+    #result-label { font-size: 12px; color:
+rgba(255,255,255,0.5);
+}
 
     #result-value {
 
@@ -370,13 +383,16 @@
 
     #error-view.show { display: flex; }
 
-    #error-msg { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.6; }
+    #error-msg { font-size: 14px; color:
+rgba(255,255,255,0.7);
+line-height: 1.6; }
 
   </style>
 
 </head>
 
 <body>
+
 
 
 
@@ -390,17 +406,20 @@
 
 
 
+
 <div id="video-wrap">
 
   <video id="video" autoplay playsinline muted></video>
 
   <!-- 모션감지용 소형 캔버스 -->
 
-  <canvas id="motion-canvas" width="80" height="80" style="display:none"></canvas>
+  <canvas id="motion-canvas" width="80" height="80"
+style="display:none"></canvas>
 
   <!-- OCR용 캔버스 -->
 
   <canvas id="ocr-canvas" style="display:none"></canvas>
+
 
 
 
@@ -430,6 +449,7 @@
 
 
 
+
 <div id="footer">
 
   <p>바코드를 박스 안에 맞추고 가만히 유지하세요</p>
@@ -437,6 +457,7 @@
   <button id="btn-manual">직접 입력</button>
 
 </div>
+
 
 
 
@@ -451,6 +472,7 @@
   <button id="btn-retry">다시 스캔</button>
 
 </div>
+
 
 
 
@@ -486,15 +508,21 @@
 
 
 
+
   // 정지 감지 설정
 
-  const MOTION_SIZE       = 80;   // 모션 감지용 캔버스 크기
+  const MOTION_SIZE       = 80;   //
+모션 감지용 캔버스 크기
 
-  const STILL_THRESHOLD   = 6;    // 평균 픽셀 차이 임계값 (낮을수록 엄격)
+  const STILL_THRESHOLD   = 6;    //
+평균 픽셀 차이 임계값 (낮을수록 엄격)
 
-  const STILL_FRAMES_NEED = 6;    // 연속 정지 프레임 수
+  const STILL_FRAMES_NEED = 6;    //
+연속 정지 프레임 수
 
-  const MOTION_INTERVAL   = 120;  // 모션 체크 간격 (ms)
+  const MOTION_INTERVAL   = 120;  //
+모션 체크 간격 (ms)
+
 
 
 
@@ -516,13 +544,19 @@
 
 
 
-  const openerOrigin = document.referrer ? new URL(document.referrer).origin : '*';
+
+  const openerOrigin = document.referrer
+? new URL(document.referrer).origin
+: '*';
+
 
 
 
   /* ── 공통 유틸 ── */
 
-  function closePopup() { stopAll(); window.close(); }
+  function closePopup() { stopAll();
+window.close(); }
+
 
 
 
@@ -532,11 +566,13 @@
 
     if (motionTimer) clearInterval(motionTimer);
 
-    if (stream) stream.getTracks().forEach(t => t.stop());
+    if (stream) stream.getTracks().forEach(t
+=> t.stop());
 
     if (worker) worker.terminate();
 
   }
+
 
 
 
@@ -548,9 +584,11 @@
 
       window.opener.postMessage(
 
-        { type: 'BARCODE_RESULT', barcode: value },
+        { type: 'BARCODE_RESULT', barcode:
+value },
 
-        openerOrigin === '' ? '*' : openerOrigin
+        openerOrigin === '' ?
+'*' : openerOrigin
 
       );
 
@@ -559,6 +597,7 @@
     window.close();
 
   }
+
 
 
 
@@ -572,7 +611,8 @@
 
     scanBox.className = '';
 
-    stabilityBar.style.width = '0%';
+    stabilityBar.style.width =
+'0%';
 
     scannedValue = value;
 
@@ -584,13 +624,17 @@
 
 
 
+
   /* ── 버튼 이벤트 ── */
 
-  document.getElementById('btn-confirm').addEventListener('click', () => sendResult(scannedValue));
+  document.getElementById('btn-confirm').addEventListener('click',
+() => sendResult(scannedValue));
 
 
 
-  document.getElementById('btn-retry').addEventListener('click', () => {
+
+  document.getElementById('btn-retry').addEventListener('click',
+() => {
 
     resultOverlay.classList.remove('show');
 
@@ -604,7 +648,8 @@
 
     scanning = true;
 
-    statusEl.textContent = '바코드를 박스 안에 맞추고 가만히 유지하세요';
+    statusEl.textContent = '바코드를
+박스 안에 맞추고 가만히 유지하세요';
 
     startMotionLoop();
 
@@ -612,17 +657,24 @@
 
 
 
-  document.getElementById('btn-close').addEventListener('click', closePopup);
 
-  document.getElementById('btn-manual-err').addEventListener('click', closePopup);
+  document.getElementById('btn-close').addEventListener('click',
+closePopup);
 
-  document.getElementById('btn-manual').addEventListener('click', () => {
+  document.getElementById('btn-manual-err').addEventListener('click',
+closePopup);
 
-    const val = prompt('S/N 또는 MAC 주소를 직접 입력하세요:');
+  document.getElementById('btn-manual').addEventListener('click',
+() => {
 
-    if (val && val.trim()) sendResult(val.trim().toUpperCase());
+    const val = prompt('S/N
+또는 MAC 주소를 직접 입력하세요:');
+
+    if (val && val.trim())
+sendResult(val.trim().toUpperCase());
 
   });
+
 
 
 
@@ -630,9 +682,12 @@
 
   function cropToScanBox() {
 
-    const vw = video.videoWidth, vh = video.videoHeight;
+    const vw = video.videoWidth,
+vh = video.videoHeight;
 
-    if (!vw || !vh) return false;
+    if (!vw || !vh)
+return false;
+
 
 
 
@@ -642,71 +697,107 @@
 
 
 
-    const videoAspect    = vw / vh;
 
-    const renderedAspect = vRect.width / vRect.height;
+    const videoAspect    = vw
+/ vh;
 
-    let renderW = vRect.width, renderH = vRect.height;
+    const renderedAspect = vRect.width
+/ vRect.height;
 
-    let offsetX = 0, offsetY = 0;
+    let renderW = vRect.width,
+renderH = vRect.height;
 
-    if (videoAspect > renderedAspect) {
+    let offsetX = 0,
+offsetY = 0;
 
-      renderW = vRect.height * videoAspect;
+    if (videoAspect > renderedAspect)
+{
 
-      offsetX = (renderW - vRect.width) / 2;
+      renderW = vRect.height
+* videoAspect;
+
+      offsetX = (renderW -
+vRect.width) / 2;
 
     } else {
 
-      renderH = vRect.width / videoAspect;
+      renderH = vRect.width
+/ videoAspect;
 
-      offsetY = (renderH - vRect.height) / 2;
+      offsetY = (renderH -
+vRect.height) / 2;
 
     }
 
 
 
-    const sx = (bRect.left - vRect.left + offsetX) * (vw / renderW);
 
-    const sw = bRect.width  * (vw / renderW);
+    const sx = (bRect.left
+- vRect.left + offsetX)
+* (vw / renderW);
 
-    const sh = bRect.height * (vh / renderH);
+    const sw = bRect.width
+ * (vw / renderW);
+
+    const sh = bRect.height
+* (vh / renderH);
 
     // 하단 30%만 크롭 (바코드 막대기 제외, 숫자/문자 영역만)
 
-    const textH = sh * 0.35;
+    const textH = sh
+* 0.35;
 
-    const sy = ((bRect.top - vRect.top + offsetY) * (vh / renderH)) + (sh - textH);
+    const sy = ((bRect.top
+- vRect.top + offsetY)
+* (vh / renderH)) +
+(sh - textH);
+
 
 
 
     // 2배 업스케일 + 그레이스케일 + 이진화
 
-    const scale = 4;
+    const scale = 2.5;
 
-    ocrCanvas.width  = sw * scale;
+    ocrCanvas.width  = sw *
+scale;
 
-    ocrCanvas.height = textH * scale;
+    ocrCanvas.height = textH *
+scale;
 
-    ocrCtx.drawImage(video, sx, sy, sw, textH, 0, 0, ocrCanvas.width, ocrCanvas.height);
+    ocrCtx.drawImage(video, sx,
+sy, sw, textH, 0, 0,
+ocrCanvas.width, ocrCanvas.height);
 
 
 
-    const imgData = ocrCtx.getImageData(0, 0, ocrCanvas.width, ocrCanvas.height);
+
+    const imgData = ocrCtx.getImageData(0,
+0, ocrCanvas.width, ocrCanvas.height);
 
     const d = imgData.data;
 
-    for (let i = 0; i < d.length; i += 4) {
+    for (let i =
+0; i < d.length;
+i += 4) {
 
-      const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+      const gray = 0.299
+* d[i] + 0.587
+* d[i+1] +
+0.114 * d[i+2];
 
-      const bin  = gray > 130 ? 255 : 0;
+      const bin  = gray
+> 130 ? 255 :
+0;
 
-      d[i] = d[i+1] = d[i+2] = bin;
+      d[i] = d[i+1]
+= d[i+2] =
+bin;
 
     }
 
-    ocrCtx.putImageData(imgData, 0, 0);
+    ocrCtx.putImageData(imgData, 0,
+0);
 
     return true;
 
@@ -714,45 +805,60 @@
 
 
 
+
   /* ── OCR 실행 ── */
 
   async function runOcr() {
 
-    if (isOcrRunning || !worker) return;
+    if (isOcrRunning || !worker)
+return;
 
     isOcrRunning = true;
 
     scanBox.className = 'ocring';
 
-    statusEl.textContent = 'OCR 분석 중...';
+    statusEl.textContent = 'OCR
+분석 중...';
+
 
 
 
     try {
 
-      if (!cropToScanBox()) throw new Error('crop 실패');
+      if (!cropToScanBox()) throw
+new Error('crop 실패');
 
-      const { data: { text } } = await worker.recognize(ocrCanvas);
+      const { data: { text } } =
+await worker.recognize(ocrCanvas);
 
       const cleaned = text
 
-        .replace(/\s+/g, '')
+        .replace(/\s+/g,
+'')
 
         .toUpperCase()
 
-        .replace(/[^A-Z0-9]/g, '');
+        .replace(/[^A-Z0-9]/g,
+'');
 
 
 
-      if (cleaned.length >= 4) {
 
-        showResult(cleaned);
+      const serialMatch = cleaned.match(/[A-Z0-9]{10,16}/);
+
+
+
+
+      if (serialMatch) {
+
+        showResult(serialMatch[0]);
 
       } else {
 
         // 인식 실패 → 재시도
 
-        statusEl.textContent = '인식 실패 — 다시 맞춰주세요';
+        statusEl.textContent = '인식
+실패 — 다시 맞춰주세요';
 
         scanBox.className = '';
 
@@ -764,7 +870,8 @@
 
     } catch {
 
-      statusEl.textContent = '오류 발생 — 다시 시도합니다';
+      statusEl.textContent = '오류
+발생 — 다시 시도합니다';
 
       scanBox.className = '';
 
@@ -780,6 +887,7 @@
 
 
 
+
   /* ── 정지 감지 루프 ── */
 
   function startMotionLoop() {
@@ -788,19 +896,27 @@
 
 
 
-    motionTimer = setInterval(() => {
 
-      if (!scanning || isOcrRunning) return;
+    motionTimer = setInterval(() =>
+{
 
-      if (video.readyState < 2) return;
+      if (!scanning || isOcrRunning)
+return;
+
+      if (video.readyState < 2)
+return;
+
 
 
 
       // 소형 캔버스에 현재 프레임 그레이스케일로 캡처
 
-      motionCtx.drawImage(video, 0, 0, MOTION_SIZE, MOTION_SIZE);
+      motionCtx.drawImage(video, 0,
+0, MOTION_SIZE, MOTION_SIZE);
 
-      const curr = motionCtx.getImageData(0, 0, MOTION_SIZE, MOTION_SIZE).data;
+      const curr = motionCtx.getImageData(0,
+0, MOTION_SIZE, MOTION_SIZE).data;
+
 
 
 
@@ -808,41 +924,61 @@
 
         let diffSum = 0;
 
-        for (let i = 0; i < curr.length; i += 4) {
+        for (let i =
+0; i < curr.length;
+i += 4) {
 
-          const pg = 0.299 * prevFrameData[i] + 0.587 * prevFrameData[i+1] + 0.114 * prevFrameData[i+2];
+          const pg = 0.299
+* prevFrameData[i] + 0.587
+* prevFrameData[i+1] +
+0.114 * prevFrameData[i+2];
 
-          const cg = 0.299 * curr[i]          + 0.587 * curr[i+1]          + 0.114 * curr[i+2];
+          const cg = 0.299
+* curr[i]          + 0.587
+* curr[i+1]          +
+0.114 * curr[i+2];
 
-          diffSum += Math.abs(pg - cg);
+          diffSum += Math.abs(pg
+- cg);
 
         }
 
-        const avgDiff = diffSum / (MOTION_SIZE * MOTION_SIZE);
+        const avgDiff = diffSum
+/ (MOTION_SIZE * MOTION_SIZE);
 
-        const isStill = avgDiff < STILL_THRESHOLD;
+        const isStill = avgDiff
+< STILL_THRESHOLD;
+
 
 
 
         if (isStill) {
 
-          stillCount = Math.min(stillCount + 1, STILL_FRAMES_NEED);
+          stillCount = Math.min(stillCount
++ 1, STILL_FRAMES_NEED);
 
         } else {
 
-          stillCount = Math.max(stillCount - 1, 0);
+          stillCount = Math.max(stillCount
+- 1, 0);
 
         }
 
 
 
+
         // 안정도 바 업데이트
 
-        const pct = (stillCount / STILL_FRAMES_NEED) * 100;
+        const pct = (stillCount
+/ STILL_FRAMES_NEED) * 100;
 
-        stabilityBar.style.width = pct + '%';
+        stabilityBar.style.width =
+pct + '%';
 
-        stabilityBar.style.background = pct >= 100 ? '#eab308' : '#22c55e';
+        stabilityBar.style.background =
+pct >= 100 ? '#eab308'
+: '#22c55e';
+
 
 
 
@@ -850,7 +986,8 @@
 
           scanBox.className = 'still';
 
-          statusEl.textContent = stillCount >= STILL_FRAMES_NEED
+          statusEl.textContent = stillCount
+>= STILL_FRAMES_NEED
 
             ? 'OCR 분석 시작...'
 
@@ -860,15 +997,18 @@
 
           scanBox.className = '';
 
-          statusEl.textContent = '바코드를 박스 안에 맞추고 가만히 유지하세요';
+          statusEl.textContent = '바코드를
+박스 안에 맞추고 가만히 유지하세요';
 
         }
 
 
 
+
         // 연속 정지 프레임 충족 → OCR 실행
 
-        if (stillCount >= STILL_FRAMES_NEED) {
+        if (stillCount >= STILL_FRAMES_NEED)
+{
 
           stillCount = 0;
 
@@ -877,6 +1017,7 @@
         }
 
       }
+
 
 
 
@@ -890,6 +1031,7 @@
 
 
 
+
   /* ── 초기화 ── */
 
   async function init() {
@@ -900,7 +1042,10 @@
 
       stream = await navigator.mediaDevices.getUserMedia({
 
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: { ideal:
+'environment' }, width: { ideal:
+1280 }, height: { ideal:
+720 } },
 
         audio: false,
 
@@ -912,11 +1057,14 @@
 
     } catch (e) {
 
-      video.style.display = 'none';
+      video.style.display =
+'none';
 
-      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('overlay').style.display
+= 'none';
 
-      errorMsg.textContent = e.name === 'NotAllowedError'
+      errorMsg.textContent = e.name
+=== 'NotAllowedError'
 
         ? '카메라 권한이 거부되었습니다.\n브라우저 설정에서 카메라를 허용해 주세요.'
 
@@ -930,13 +1078,16 @@
 
 
 
+
     // Tesseract 초기화
 
-    statusEl.textContent = 'OCR 엔진 로딩 중... (최초 1회)';
+    statusEl.textContent = 'OCR
+엔진 로딩 중... (최초 1회)';
 
     try {
 
-      worker = await Tesseract.createWorker('eng', 1, {
+      worker = await Tesseract.createWorker('eng',
+1, {
 
         workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
 
@@ -944,9 +1095,13 @@
 
         logger: m => {
 
-          if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract') {
+          if (m.status === 'loading
+tesseract core' || m.status === 'initializing
+tesseract') {
 
-            statusEl.textContent = `OCR 초기화 중... ${Math.round((m.progress || 0) * 100)}%`;
+            statusEl.textContent = `OCR
+초기화 중... ${Math.round((m.progress
+|| 0) * 100)}%`;
 
           }
 
@@ -964,7 +1119,9 @@
 
 
 
-      statusEl.textContent = '바코드를 박스 안에 맞추고 가만히 유지하세요';
+
+      statusEl.textContent = '바코드를
+박스 안에 맞추고 가만히 유지하세요';
 
       scanning = true;
 
@@ -972,11 +1129,13 @@
 
     } catch (e) {
 
-      statusEl.textContent = 'OCR 엔진 로드 실패 — 직접 입력을 사용하세요.';
+      statusEl.textContent = 'OCR
+엔진 로드 실패 — 직접 입력을 사용하세요.';
 
     }
 
   }
+
 
 
 
