@@ -7,22 +7,27 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #000;
+      background: #111;
       color: #fff;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       height: 100dvh;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      gap: 20px;
     }
+
     #header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 14px 16px;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.8);
       z-index: 10;
-      flex-shrink: 0;
     }
     #header h1 { font-size: 16px; font-weight: 600; }
     #btn-close {
@@ -34,157 +39,152 @@
       border-radius: 20px;
       cursor: pointer;
     }
-    #video-wrap {
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-    }
-    #video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    #overlay {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-    #scan-box {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -55%);
-      width: min(80vw, 280px);
-      height: 120px;
-      border: 2px solid rgba(255,255,255,0.8);
-      border-radius: 8px;
-      box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
-      transition: border-color 0.2s;
-    }
-    #scan-box.still  { border-color: #22c55e; }
-    #scan-box.ocring { border-color: #eab308; }
-    #scan-line {
-      position: absolute;
-      left: 4px; right: 4px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #22c55e, transparent);
-      animation: scanAnim 1.8s ease-in-out infinite;
-    }
-    #scan-line.paused { animation-play-state: paused; opacity: 0; }
-    @keyframes scanAnim {
-      0%   { top: 8px; opacity: 0; }
-      10%  { opacity: 1; }
-      90%  { opacity: 1; }
-      100% { top: calc(100% - 10px); opacity: 0; }
-    }
-    #status {
-      position: absolute;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.65);
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-size: 13px;
-      text-align: center;
-      max-width: 88vw;
-      white-space: normal;
-      line-height: 1.5;
-    }
-    /* 정지 감지 안정도 바 */
-    #stability-wrap {
-      position: absolute;
-      bottom: 52px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(80vw, 280px);
-      height: 4px;
-      background: rgba(255,255,255,0.15);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    #stability-bar {
-      height: 100%;
-      width: 0%;
-      background: #22c55e;
-      border-radius: 2px;
-      transition: width 0.15s, background 0.15s;
-    }
-    #footer {
-      padding: 16px;
-      background: rgba(0,0,0,0.7);
-      text-align: center;
-      flex-shrink: 0;
-    }
-    #footer p { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 10px; }
-    #btn-manual {
-      background: #374151;
-      border: none;
-      color: #fff;
-      font-size: 14px;
-      padding: 10px 28px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    /* 결과 오버레이 */
-    #result-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.88);
-      z-index: 50;
+
+    /* 메인 영역 */
+    #main {
+      display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 24px;
-      gap: 16px;
+      gap: 20px;
+      width: 100%;
+      max-width: 340px;
+      margin-top: 56px;
     }
-    #result-overlay.show { display: flex; }
+
+    #guide-box {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px dashed rgba(255,255,255,0.2);
+      border-radius: 16px;
+      padding: 28px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    #guide-box svg { opacity: 0.5; }
+    #guide-text {
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.6;
+    }
+
+    /* 촬영 버튼 */
+    #btn-capture {
+      width: 100%;
+      padding: 18px;
+      background: #22c55e;
+      border: none;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      border-radius: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      touch-manipulation: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #btn-capture:active { background: #16a34a; }
+    #btn-capture:disabled {
+      background: #374151;
+      cursor: not-allowed;
+    }
+
+    #btn-manual {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.6);
+      font-size: 14px;
+      padding: 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    /* OCR 진행 중 */
+    #loading-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
+    }
+    #loading-view.show { display: flex; }
+    #spinner {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(255,255,255,0.15);
+      border-top-color: #22c55e;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-text { font-size: 14px; color: rgba(255,255,255,0.7); }
+
+    /* 미리보기 */
+    #preview-wrap {
+      display: none;
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+    }
+    #preview-wrap.show { display: block; }
+    #preview-img {
+      width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+    }
+
+    /* 결과 */
+    #result-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      text-align: center;
+    }
+    #result-view.show { display: flex; }
     #result-label { font-size: 12px; color: rgba(255,255,255,0.5); }
     #result-value {
       font-size: 24px;
       font-weight: 700;
-      word-break: break-all;
-      text-align: center;
       color: #22c55e;
+      word-break: break-all;
     }
     #btn-confirm {
-      margin-top: 8px;
+      width: 100%;
+      padding: 16px;
       background: #22c55e;
       border: none;
       color: #fff;
       font-size: 16px;
-      font-weight: 600;
-      padding: 14px 0;
-      border-radius: 12px;
+      font-weight: 700;
+      border-radius: 14px;
       cursor: pointer;
-      width: 100%;
-      max-width: 280px;
     }
+    #btn-confirm:active { background: #16a34a; }
     #btn-retry {
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.3);
-      color: #fff;
-      font-size: 14px;
-      padding: 10px 0;
-      border-radius: 12px;
-      cursor: pointer;
       width: 100%;
-      max-width: 280px;
+      padding: 12px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      border-radius: 10px;
+      cursor: pointer;
     }
-    /* 에러 */
-    #error-view {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      flex: 1;
-      gap: 12px;
-      padding: 24px;
+
+    /* 상태 메시지 */
+    #status-msg {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
       text-align: center;
     }
-    #error-view.show { display: flex; }
-    #error-msg { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.6; }
   </style>
 </head>
 <body>
@@ -194,82 +194,84 @@
   <button id="btn-close">닫기</button>
 </div>
 
-<div id="video-wrap">
-  <video id="video" autoplay playsinline muted></video>
-  <!-- 모션감지용 소형 캔버스 -->
-  <canvas id="motion-canvas" width="80" height="80" style="display:none"></canvas>
-  <!-- OCR용 캔버스 -->
-  <canvas id="ocr-canvas" style="display:none"></canvas>
+<div id="main">
 
-  <div id="overlay">
-    <div id="scan-box">
-      <div id="scan-line"></div>
-    </div>
-    <div id="stability-wrap"><div id="stability-bar"></div></div>
-    <div id="status">OCR 엔진 초기화 중...</div>
+  <!-- 기본 화면 -->
+  <div id="guide-box">
+    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+        d="M3 9V6a1 1 0 011-1h3M3 15v3a1 1 0 001 1h3m11-4v3a1 1 0 01-1 1h-3m4-12h-3a1 1 0 00-1 1v3
+           M7 12h10M12 7v10"/>
+    </svg>
+    <p id="guide-text">카메라로 바코드 아래 숫자/문자를<br>선명하게 찍으면 자동으로 인식합니다</p>
   </div>
-  <div id="error-view">
-    <p id="error-msg"></p>
-    <button id="btn-manual-err">닫기</button>
-  </div>
-</div>
 
-<div id="footer">
-  <p>바코드를 박스 안에 맞추고 가만히 유지하세요</p>
+  <!-- 이미지 미리보기 -->
+  <div id="preview-wrap">
+    <img id="preview-img" alt="촬영 이미지" />
+  </div>
+
+  <!-- OCR 진행 중 -->
+  <div id="loading-view">
+    <div id="spinner"></div>
+    <div id="loading-text">OCR 분석 중...</div>
+  </div>
+
+  <!-- 결과 -->
+  <div id="result-view">
+    <div id="result-label">인식 결과</div>
+    <div id="result-value"></div>
+    <button id="btn-confirm">이 값으로 조회</button>
+    <button id="btn-retry">다시 촬영</button>
+  </div>
+
+  <!-- 촬영 버튼 -->
+  <button id="btn-capture">
+    <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+      <circle cx="12" cy="13" r="3" stroke-width="2"/>
+    </svg>
+    카메라로 촬영
+  </button>
+
   <button id="btn-manual">직접 입력</button>
+
+  <div id="status-msg">OCR 엔진 로딩 중...</div>
 </div>
 
-<div id="result-overlay">
-  <div id="result-label">OCR 인식 결과</div>
-  <div id="result-value"></div>
-  <button id="btn-confirm">확인 (이 값으로 조회)</button>
-  <button id="btn-retry">다시 스캔</button>
-</div>
+<!-- 숨김 파일 입력 (네이티브 카메라) -->
+<input id="file-input" type="file" accept="image/*" capture="environment" style="display:none" />
+<!-- OCR 처리용 캔버스 -->
+<canvas id="ocr-canvas" style="display:none"></canvas>
 
 <script>
-  const video        = document.getElementById('video');
-  const motionCanvas = document.getElementById('motion-canvas');
-  const motionCtx    = motionCanvas.getContext('2d');
-  const ocrCanvas    = document.getElementById('ocr-canvas');
-  const ocrCtx       = ocrCanvas.getContext('2d');
-  const scanBox      = document.getElementById('scan-box');
-  const scanLine     = document.getElementById('scan-line');
-  const stabilityBar = document.getElementById('stability-bar');
-  const statusEl     = document.getElementById('status');
-  const resultOverlay = document.getElementById('result-overlay');
-  const resultValue  = document.getElementById('result-value');
-  const errorView    = document.getElementById('error-view');
-  const errorMsg     = document.getElementById('error-msg');
+  const fileInput   = document.getElementById('file-input');
+  const ocrCanvas   = document.getElementById('ocr-canvas');
+  const ocrCtx      = ocrCanvas.getContext('2d');
+  const previewWrap = document.getElementById('preview-wrap');
+  const previewImg  = document.getElementById('preview-img');
+  const loadingView = document.getElementById('loading-view');
+  const loadingText = document.getElementById('loading-text');
+  const resultView  = document.getElementById('result-view');
+  const resultValue = document.getElementById('result-value');
+  const btnCapture  = document.getElementById('btn-capture');
+  const statusMsg   = document.getElementById('status-msg');
 
-  // 정지 감지 설정
-  const MOTION_SIZE       = 80;   // 모션 감지용 캔버스 크기
-  const STILL_THRESHOLD   = 6;    // 평균 픽셀 차이 임계값 (낮을수록 엄격)
-  const STILL_FRAMES_NEED = 6;    // 연속 정지 프레임 수
-  const MOTION_INTERVAL   = 120;  // 모션 체크 간격 (ms)
-
-  let stream         = null;
-  let worker         = null;
-  let scanning       = false;
-  let isOcrRunning   = false;
-  let stillCount     = 0;
-  let prevFrameData  = null;
-  let motionTimer    = null;
-  let scannedValue   = null;
+  let worker = null;
+  let workerReady = false;
+  let scannedValue = null;
 
   const openerOrigin = document.referrer ? new URL(document.referrer).origin : '*';
 
-  /* ── 공통 유틸 ── */
-  function closePopup() { stopAll(); window.close(); }
-
-  function stopAll() {
-    scanning = false;
-    if (motionTimer) clearInterval(motionTimer);
-    if (stream) stream.getTracks().forEach(t => t.stop());
+  /* ── 팝업 닫기 / 결과 전송 ── */
+  function closePopup() {
     if (worker) worker.terminate();
+    window.close();
   }
 
   function sendResult(value) {
-    stopAll();
+    if (worker) worker.terminate();
     if (window.opener) {
       window.opener.postMessage(
         { type: 'BARCODE_RESULT', barcode: value },
@@ -279,92 +281,57 @@
     window.close();
   }
 
-  function showResult(value) {
-    scanning = false;
-    if (motionTimer) clearInterval(motionTimer);
-    scanLine.classList.add('paused');
-    scanBox.className = '';
-    stabilityBar.style.width = '0%';
-    scannedValue = value;
-    resultValue.textContent = value;
-    resultOverlay.classList.add('show');
-  }
+  document.getElementById('btn-close').addEventListener('click', closePopup);
 
-  /* ── 버튼 이벤트 ── */
   document.getElementById('btn-confirm').addEventListener('click', () => sendResult(scannedValue));
 
   document.getElementById('btn-retry').addEventListener('click', () => {
-    resultOverlay.classList.remove('show');
-    scanLine.classList.remove('paused');
-    scannedValue = null;
-    stillCount = 0;
-    prevFrameData = null;
-    scanning = true;
-    statusEl.textContent = '바코드를 박스 안에 맞추고 가만히 유지하세요';
-    startMotionLoop();
+    resultView.classList.remove('show');
+    previewWrap.classList.remove('show');
+    fileInput.value = '';
+    fileInput.click();
   });
 
-  document.getElementById('btn-close').addEventListener('click', closePopup);
-  document.getElementById('btn-manual-err').addEventListener('click', closePopup);
   document.getElementById('btn-manual').addEventListener('click', () => {
     const val = prompt('S/N 또는 MAC 주소를 직접 입력하세요:');
     if (val && val.trim()) sendResult(val.trim().toUpperCase());
   });
 
-  /* ── OCR 캔버스 크롭 (스캔 박스 영역) ── */
-  function cropToScanBox() {
-    const vw = video.videoWidth, vh = video.videoHeight;
-    if (!vw || !vh) return false;
+  /* ── 촬영 버튼 ── */
+  btnCapture.addEventListener('click', () => {
+    fileInput.click();
+  });
 
-    const vRect = video.getBoundingClientRect();
-    const bRect = scanBox.getBoundingClientRect();
+  /* ── 이미지 선택 시 OCR 실행 ── */
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
 
-    const videoAspect    = vw / vh;
-    const renderedAspect = vRect.width / vRect.height;
-    let renderW = vRect.width, renderH = vRect.height;
-    let offsetX = 0, offsetY = 0;
-    if (videoAspect > renderedAspect) {
-      renderW = vRect.height * videoAspect;
-      offsetX = (renderW - vRect.width) / 2;
-    } else {
-      renderH = vRect.width / videoAspect;
-      offsetY = (renderH - vRect.height) / 2;
+    // 미리보기
+    const objectUrl = URL.createObjectURL(file);
+    previewImg.src = objectUrl;
+    previewWrap.classList.add('show');
+    resultView.classList.remove('show');
+
+    // OCR 준비 안 됐으면 대기
+    if (!workerReady) {
+      loadingView.classList.add('show');
+      loadingText.textContent = 'OCR 엔진 준비 중... 잠시 기다려주세요';
+      await waitForWorker();
     }
 
-    const sx = (bRect.left - vRect.left + offsetX) * (vw / renderW);
-    const sw = bRect.width  * (vw / renderW);
-    const sh = bRect.height * (vh / renderH);
-    // 하단 30%만 크롭 (바코드 막대기 제외, 숫자/문자 영역만)
-    const textH = sh * 0.35;
-    const sy = ((bRect.top - vRect.top + offsetY) * (vh / renderH)) + (sh - textH);
-
-    // 2배 업스케일 + 그레이스케일 + 이진화
-    const scale = 2.5;
-    ocrCanvas.width  = sw * scale;
-    ocrCanvas.height = textH * scale;
-    ocrCtx.drawImage(video, sx, sy, sw, textH, 0, 0, ocrCanvas.width, ocrCanvas.height);
-
-    const imgData = ocrCtx.getImageData(0, 0, ocrCanvas.width, ocrCanvas.height);
-    const d = imgData.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-      const bin  = gray > 130 ? 255 : 0;
-      d[i] = d[i+1] = d[i+2] = bin;
-    }
-    ocrCtx.putImageData(imgData, 0, 0);
-    return true;
-  }
-
-  /* ── OCR 실행 ── */
-  async function runOcr() {
-    if (isOcrRunning || !worker) return;
-    isOcrRunning = true;
-    scanBox.className = 'ocring';
-    statusEl.textContent = 'OCR 분석 중...';
+    loadingView.classList.add('show');
+    loadingText.textContent = 'OCR 분석 중...';
 
     try {
-      if (!cropToScanBox()) throw new Error('crop 실패');
+      // 이미지 → 캔버스 전처리
+      const img = await loadImage(objectUrl);
+      URL.revokeObjectURL(objectUrl);
+      preprocessImage(img);
+
+      // OCR 실행
       const { data: { text } } = await worker.recognize(ocrCanvas);
+
       const cleaned = text
         .replace(/\s+/g, '')
         .toUpperCase()
@@ -372,80 +339,69 @@
 
       const serialMatch = cleaned.match(/[A-Z0-9]{10,16}/);
 
+      loadingView.classList.remove('show');
+
       if (serialMatch) {
-        showResult(serialMatch[0]);
+        scannedValue = serialMatch[0];
+        resultValue.textContent = scannedValue;
+        resultView.classList.add('show');
       } else {
-        // 인식 실패 → 재시도
-        statusEl.textContent = '인식 실패 — 다시 맞춰주세요';
-        scanBox.className = '';
-        stillCount = 0;
-        prevFrameData = null;
+        alert('문자를 인식하지 못했습니다.\n바코드 아래 숫자/문자 부분을 더 가까이, 선명하게 찍어주세요.');
+        previewWrap.classList.remove('show');
+        fileInput.value = '';
       }
-    } catch {
-      statusEl.textContent = '오류 발생 — 다시 시도합니다';
-      scanBox.className = '';
-      stillCount = 0;
-    } finally {
-      isOcrRunning = false;
+    } catch (e) {
+      loadingView.classList.remove('show');
+      alert('OCR 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+      previewWrap.classList.remove('show');
+      fileInput.value = '';
     }
+  });
+
+  /* ── 이미지 로드 헬퍼 ── */
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
   }
 
-  /* ── 정지 감지 루프 ── */
-  function startMotionLoop() {
-    if (motionTimer) clearInterval(motionTimer);
+  /* ── 캔버스 전처리 (그레이스케일 + 이진화) ── */
+  function preprocessImage(img) {
+    // 긴 쪽을 1600px로 제한 (너무 크면 OCR 느림)
+    const MAX = 1600;
+    let w = img.naturalWidth, h = img.naturalHeight;
+    if (w > MAX || h > MAX) {
+      if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+      else       { w = Math.round(w * MAX / h); h = MAX; }
+    }
 
-    motionTimer = setInterval(() => {
-      if (!scanning || isOcrRunning) return;
-      if (video.readyState < 2) return;
+    ocrCanvas.width  = w;
+    ocrCanvas.height = h;
+    ocrCtx.drawImage(img, 0, 0, w, h);
 
-      // 소형 캔버스에 현재 프레임 그레이스케일로 캡처
-      motionCtx.drawImage(video, 0, 0, MOTION_SIZE, MOTION_SIZE);
-      const curr = motionCtx.getImageData(0, 0, MOTION_SIZE, MOTION_SIZE).data;
-
-      if (prevFrameData) {
-        let diffSum = 0;
-        for (let i = 0; i < curr.length; i += 4) {
-          const pg = 0.299 * prevFrameData[i] + 0.587 * prevFrameData[i+1] + 0.114 * prevFrameData[i+2];
-          const cg = 0.299 * curr[i]          + 0.587 * curr[i+1]          + 0.114 * curr[i+2];
-          diffSum += Math.abs(pg - cg);
-        }
-        const avgDiff = diffSum / (MOTION_SIZE * MOTION_SIZE);
-        const isStill = avgDiff < STILL_THRESHOLD;
-
-        if (isStill) {
-          stillCount = Math.min(stillCount + 1, STILL_FRAMES_NEED);
-        } else {
-          stillCount = Math.max(stillCount - 1, 0);
-        }
-
-        // 안정도 바 업데이트
-        const pct = (stillCount / STILL_FRAMES_NEED) * 100;
-        stabilityBar.style.width = pct + '%';
-        stabilityBar.style.background = pct >= 100 ? '#eab308' : '#22c55e';
-
-        if (isStill) {
-          scanBox.className = 'still';
-          statusEl.textContent = stillCount >= STILL_FRAMES_NEED
-            ? 'OCR 분석 시작...'
-            : `정지 감지 중... (${stillCount}/${STILL_FRAMES_NEED})`;
-        } else {
-          scanBox.className = '';
-          statusEl.textContent = '바코드를 박스 안에 맞추고 가만히 유지하세요';
-        }
-
-        // 연속 정지 프레임 충족 → OCR 실행
-        if (stillCount >= STILL_FRAMES_NEED) {
-          stillCount = 0;
-          runOcr();
-        }
-      }
-
-      // 현재 프레임 저장
-      prevFrameData = new Uint8ClampedArray(curr);
-    }, MOTION_INTERVAL);
+    const imgData = ocrCtx.getImageData(0, 0, w, h);
+    const d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+      const bin  = gray > 128 ? 255 : 0;
+      d[i] = d[i+1] = d[i+2] = bin;
+    }
+    ocrCtx.putImageData(imgData, 0, 0);
   }
 
-  // Tesseract 동적 로드
+  /* ── Worker 준비 대기 ── */
+  function waitForWorker() {
+    return new Promise(resolve => {
+      const check = setInterval(() => {
+        if (workerReady) { clearInterval(check); resolve(); }
+      }, 200);
+    });
+  }
+
+  /* ── Tesseract 동적 로드 + 초기화 ── */
   function loadTesseractScript() {
     return new Promise((resolve, reject) => {
       const s = document.createElement('script');
@@ -456,41 +412,13 @@
     });
   }
 
-  /* ── 초기화 ── */
-  async function init() {
-    // 1) 카메라 즉시 시작
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
-      video.srcObject = stream;
-      await video.play();
-      statusEl.textContent = 'OCR 엔진 로딩 중... (최초 1회)';
-    } catch (e) {
-      video.style.display = 'none';
-      document.getElementById('overlay').style.display = 'none';
-      errorMsg.textContent = e.name === 'NotAllowedError'
-        ? '카메라 권한이 거부되었습니다.\n브라우저 설정에서 카메라를 허용해 주세요.'
-        : `카메라를 열 수 없습니다: ${e.message}`;
-      errorView.classList.add('show');
-      return;
-    }
-
-    // 2) Tesseract 스크립트 동적 로드 (카메라는 이미 표시 중)
+  async function initWorker() {
     try {
       await loadTesseractScript();
-    } catch {
-      statusEl.textContent = 'OCR 스크립트 로드 실패 — 직접 입력을 사용하세요.';
-      return;
-    }
-
-    // 3) Tesseract 워커 초기화
-    try {
       worker = await Tesseract.createWorker('eng', 1, {
         logger: m => {
           if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract') {
-            statusEl.textContent = `OCR 초기화 중... ${Math.round((m.progress || 0) * 100)}%`;
+            statusMsg.textContent = `OCR 엔진 초기화 중... ${Math.round((m.progress || 0) * 100)}%`;
           }
         },
       });
@@ -498,16 +426,14 @@
         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         tessedit_pageseg_mode: '7',
       });
-
-      statusEl.textContent = '바코드를 박스 안에 맞추고 가만히 유지하세요';
-      scanning = true;
-      startMotionLoop();
-    } catch (e) {
-      statusEl.textContent = 'OCR 엔진 로드 실패 — 직접 입력을 사용하세요.';
+      workerReady = true;
+      statusMsg.textContent = 'OCR 준비 완료';
+    } catch {
+      statusMsg.textContent = 'OCR 로드 실패 — 직접 입력을 사용하세요.';
     }
   }
 
-  init();
+  initWorker();
 </script>
 </body>
 </html>
