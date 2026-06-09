@@ -3,31 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>바코드 스캔 (OCR)</title>
+  <title>바코드 스캔</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #111;
+      background: #000;
       color: #fff;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       height: 100dvh;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      gap: 20px;
+      overflow: hidden;
     }
-
     #header {
-      position: fixed;
-      top: 0; left: 0; right: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 14px 16px;
-      background: rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.7);
       z-index: 10;
+      flex-shrink: 0;
     }
     #header h1 { font-size: 16px; font-weight: 600; }
     #btn-close {
@@ -39,401 +34,287 @@
       border-radius: 20px;
       cursor: pointer;
     }
-
-    /* 메인 영역 */
-    #main {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      width: 100%;
-      max-width: 340px;
-      margin-top: 56px;
+    #video-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
     }
-
-    #guide-box {
+    #video {
       width: 100%;
-      background: rgba(255,255,255,0.05);
-      border: 1px dashed rgba(255,255,255,0.2);
-      border-radius: 16px;
-      padding: 28px 20px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
+      height: 100%;
+      object-fit: cover;
     }
-    #guide-box svg { opacity: 0.5; }
-    #guide-text {
+    #overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    #scan-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -55%);
+      width: min(80vw, 280px);
+      height: 120px;
+      border: 2px solid rgba(255,255,255,0.8);
+      border-radius: 8px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+    }
+    #scan-line {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #22c55e, transparent);
+      animation: scan 1.8s ease-in-out infinite;
+    }
+    @keyframes scan {
+      0%   { top: 8px; opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { top: calc(100% - 10px); opacity: 0; }
+    }
+    #status {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.65);
+      padding: 8px 18px;
+      border-radius: 20px;
       font-size: 13px;
-      color: rgba(255,255,255,0.55);
-      line-height: 1.6;
+      white-space: nowrap;
+      text-align: center;
     }
-
-    /* 촬영 버튼 */
-    #btn-capture {
-      width: 100%;
-      padding: 18px;
-      background: #22c55e;
+    #footer {
+      padding: 16px;
+      background: rgba(0,0,0,0.7);
+      text-align: center;
+      flex-shrink: 0;
+    }
+    #footer p { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 10px; }
+    #btn-manual {
+      background: #374151;
       border: none;
       color: #fff;
-      font-size: 17px;
-      font-weight: 700;
-      border-radius: 14px;
+      font-size: 14px;
+      padding: 10px 28px;
+      border-radius: 8px;
       cursor: pointer;
-      display: flex;
+    }
+    #result-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 50;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      touch-manipulation: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #btn-capture:active { background: #16a34a; }
-    #btn-capture:disabled {
-      background: #374151;
-      cursor: not-allowed;
-    }
-
-    #btn-manual {
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.2);
-      color: rgba(255,255,255,0.6);
-      font-size: 14px;
-      padding: 12px;
-      border-radius: 10px;
-      cursor: pointer;
-      width: 100%;
-    }
-
-    /* OCR 진행 중 */
-    #loading-view {
-      display: none;
-      flex-direction: column;
-      align-items: center;
+      padding: 24px;
       gap: 16px;
-      text-align: center;
     }
-    #loading-view.show { display: flex; }
-    #spinner {
-      width: 44px; height: 44px;
-      border: 3px solid rgba(255,255,255,0.15);
-      border-top-color: #22c55e;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #loading-text { font-size: 14px; color: rgba(255,255,255,0.7); }
-
-    /* 미리보기 */
-    #preview-wrap {
-      display: none;
-      width: 100%;
-      border-radius: 12px;
-      overflow: hidden;
-      background: #000;
-    }
-    #preview-wrap.show { display: block; }
-    #preview-img {
-      width: 100%;
-      max-height: 200px;
-      object-fit: contain;
-    }
-
-    /* 결과 */
-    #result-view {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-      text-align: center;
-    }
-    #result-view.show { display: flex; }
-    #result-label { font-size: 12px; color: rgba(255,255,255,0.5); }
+    #result-overlay.show { display: flex; }
     #result-value {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 700;
-      color: #22c55e;
       word-break: break-all;
+      text-align: center;
+      color: #22c55e;
     }
+    #result-label { font-size: 12px; color: rgba(255,255,255,0.5); }
     #btn-confirm {
-      width: 100%;
-      padding: 16px;
+      margin-top: 8px;
       background: #22c55e;
       border: none;
       color: #fff;
       font-size: 16px;
-      font-weight: 700;
-      border-radius: 14px;
+      font-weight: 600;
+      padding: 14px 48px;
+      border-radius: 12px;
       cursor: pointer;
-    }
-    #btn-confirm:active { background: #16a34a; }
-    #btn-retry {
       width: 100%;
-      padding: 12px;
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.2);
-      color: rgba(255,255,255,0.7);
-      font-size: 14px;
-      border-radius: 10px;
-      cursor: pointer;
+      max-width: 280px;
     }
-
-    /* 상태 메시지 */
-    #status-msg {
-      font-size: 12px;
-      color: rgba(255,255,255,0.4);
+    #btn-retry {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      font-size: 14px;
+      padding: 10px 28px;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      max-width: 280px;
+    }
+    #error-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 12px;
+      padding: 24px;
       text-align: center;
     }
+    #error-view.show { display: flex; }
+    #error-msg { font-size: 14px; color: rgba(255,255,255,0.7); }
   </style>
 </head>
 <body>
 
 <div id="header">
-  <h1>바코드 스캔 (OCR)</h1>
+  <h1>바코드 스캔</h1>
   <button id="btn-close">닫기</button>
 </div>
 
-<div id="main">
-
-  <!-- 기본 화면 -->
-  <div id="guide-box">
-    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-        d="M3 9V6a1 1 0 011-1h3M3 15v3a1 1 0 001 1h3m11-4v3a1 1 0 01-1 1h-3m4-12h-3a1 1 0 00-1 1v3
-           M7 12h10M12 7v10"/>
-    </svg>
-    <p id="guide-text">카메라로 바코드 아래 숫자/문자를<br>선명하게 찍으면 자동으로 인식합니다</p>
+<div id="video-wrap">
+  <video id="video" autoplay playsinline muted></video>
+  <div id="overlay">
+    <div id="scan-box">
+      <div id="scan-line"></div>
+    </div>
+    <div id="status">카메라 초기화 중...</div>
   </div>
-
-  <!-- 이미지 미리보기 -->
-  <div id="preview-wrap">
-    <img id="preview-img" alt="촬영 이미지" />
+  <div id="error-view">
+    <p id="error-msg"></p>
+    <button id="btn-manual" onclick="closePopup()">닫기</button>
   </div>
-
-  <!-- OCR 진행 중 -->
-  <div id="loading-view">
-    <div id="spinner"></div>
-    <div id="loading-text">OCR 분석 중...</div>
-  </div>
-
-  <!-- 결과 -->
-  <div id="result-view">
-    <div id="result-label">인식 결과</div>
-    <div id="result-value"></div>
-    <button id="btn-confirm">이 값으로 조회</button>
-    <button id="btn-retry">다시 촬영</button>
-  </div>
-
-  <!-- 촬영 버튼 -->
-  <button id="btn-capture">
-    <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-      <circle cx="12" cy="13" r="3" stroke-width="2"/>
-    </svg>
-    카메라로 촬영
-  </button>
-
-  <button id="btn-manual">직접 입력</button>
-
-  <div id="status-msg">OCR 엔진 로딩 중...</div>
 </div>
 
-<!-- 숨김 파일 입력 (네이티브 카메라) -->
-<input id="file-input" type="file" accept="image/*" capture="environment" style="display:none" />
-<!-- OCR 처리용 캔버스 -->
-<canvas id="ocr-canvas" style="display:none"></canvas>
+<div id="footer">
+  <p>바코드를 가이드 박스 안에 맞춰주세요</p>
+  <button id="btn-manual">직접 입력</button>
+</div>
+
+<div id="result-overlay">
+  <div id="result-label">스캔 결과</div>
+  <div id="result-value"></div>
+  <button id="btn-confirm">확인 (이 값으로 조회)</button>
+  <button id="btn-retry">다시 스캔</button>
+</div>
 
 <script>
-  const fileInput   = document.getElementById('file-input');
-  const ocrCanvas   = document.getElementById('ocr-canvas');
-  const ocrCtx      = ocrCanvas.getContext('2d');
-  const previewWrap = document.getElementById('preview-wrap');
-  const previewImg  = document.getElementById('preview-img');
-  const loadingView = document.getElementById('loading-view');
-  const loadingText = document.getElementById('loading-text');
-  const resultView  = document.getElementById('result-view');
+  const video = document.getElementById('video');
+  const status = document.getElementById('status');
+  const resultOverlay = document.getElementById('result-overlay');
   const resultValue = document.getElementById('result-value');
-  const btnCapture  = document.getElementById('btn-capture');
-  const statusMsg   = document.getElementById('status-msg');
+  const errorView = document.getElementById('error-view');
+  const errorMsg = document.getElementById('error-msg');
 
-  let worker = null;
-  let workerReady = false;
+  let stream = null;
+  let detector = null;
+  let scanning = true;
+  let animFrameId = null;
   let scannedValue = null;
 
   const openerOrigin = document.referrer ? new URL(document.referrer).origin : '*';
 
-  /* ── 팝업 닫기 / 결과 전송 ── */
   function closePopup() {
-    if (worker) worker.terminate();
+    stopCamera();
     window.close();
   }
 
+  function stopCamera() {
+    scanning = false;
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+    if (stream) stream.getTracks().forEach(t => t.stop());
+  }
+
   function sendResult(value) {
-    if (worker) worker.terminate();
+    stopCamera();
     if (window.opener) {
-      window.opener.postMessage(
-        { type: 'BARCODE_RESULT', barcode: value },
-        openerOrigin === '' ? '*' : openerOrigin
-      );
+      window.opener.postMessage({ type: 'BARCODE_RESULT', barcode: value }, openerOrigin === '' ? '*' : openerOrigin);
     }
     window.close();
   }
 
-  document.getElementById('btn-close').addEventListener('click', closePopup);
+  function showResult(value) {
+    scanning = false;
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+    scannedValue = value;
+    resultValue.textContent = value;
+    resultOverlay.classList.add('show');
+  }
 
-  document.getElementById('btn-confirm').addEventListener('click', () => sendResult(scannedValue));
+  document.getElementById('btn-confirm').addEventListener('click', () => {
+    sendResult(scannedValue);
+  });
 
   document.getElementById('btn-retry').addEventListener('click', () => {
-    resultView.classList.remove('show');
-    previewWrap.classList.remove('show');
-    fileInput.value = '';
-    fileInput.click();
+    resultOverlay.classList.remove('show');
+    scannedValue = null;
+    scanning = true;
+    startScan();
   });
+
+  document.getElementById('btn-close').addEventListener('click', closePopup);
 
   document.getElementById('btn-manual').addEventListener('click', () => {
     const val = prompt('S/N 또는 MAC 주소를 직접 입력하세요:');
     if (val && val.trim()) sendResult(val.trim().toUpperCase());
   });
 
-  /* ── 촬영 버튼 ── */
-  btnCapture.addEventListener('click', () => {
-    fileInput.click();
-  });
-
-  /* ── 이미지 선택 시 OCR 실행 ── */
-  fileInput.addEventListener('change', async () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    // 미리보기
-    const objectUrl = URL.createObjectURL(file);
-    previewImg.src = objectUrl;
-    previewWrap.classList.add('show');
-    resultView.classList.remove('show');
-
-    // OCR 준비 안 됐으면 대기
-    if (!workerReady) {
-      loadingView.classList.add('show');
-      loadingText.textContent = 'OCR 엔진 준비 중... 잠시 기다려주세요';
-      await waitForWorker();
-    }
-
-    loadingView.classList.add('show');
-    loadingText.textContent = 'OCR 분석 중...';
-
+  async function makeBarcodeDetector() {
+    if (typeof BarcodeDetector === 'undefined') return null;
     try {
-      // 이미지 → 캔버스 전처리
-      const img = await loadImage(objectUrl);
-      URL.revokeObjectURL(objectUrl);
-      preprocessImage(img);
-
-      // OCR 실행
-      const { data: { text } } = await worker.recognize(ocrCanvas);
-
-      const cleaned = text
-        .replace(/\s+/g, '')
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, '');
-
-      const serialMatch = cleaned.match(/[A-Z0-9]{10,16}/);
-
-      loadingView.classList.remove('show');
-
-      if (serialMatch) {
-        scannedValue = serialMatch[0];
-        resultValue.textContent = scannedValue;
-        resultView.classList.add('show');
-      } else {
-        alert('문자를 인식하지 못했습니다.\n바코드 아래 숫자/문자 부분을 더 가까이, 선명하게 찍어주세요.');
-        previewWrap.classList.remove('show');
-        fileInput.value = '';
-      }
-    } catch (e) {
-      loadingView.classList.remove('show');
-      alert('OCR 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
-      previewWrap.classList.remove('show');
-      fileInput.value = '';
-    }
-  });
-
-  /* ── 이미지 로드 헬퍼 ── */
-  function loadImage(src) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = src;
-    });
+      const supported = await BarcodeDetector.getSupportedFormats();
+      return new BarcodeDetector({ formats: supported.length ? supported : ['code_128','code_39','ean_13','ean_8','qr_code','data_matrix','upc_a','upc_e'] });
+    } catch { return null; }
   }
 
-  /* ── 캔버스 전처리 (그레이스케일 + 이진화) ── */
-  function preprocessImage(img) {
-    // 긴 쪽을 1600px로 제한 (너무 크면 OCR 느림)
-    const MAX = 1600;
-    let w = img.naturalWidth, h = img.naturalHeight;
-    if (w > MAX || h > MAX) {
-      if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-      else       { w = Math.round(w * MAX / h); h = MAX; }
+  async function startScan() {
+    status.textContent = '스캔 중...';
+    if (!detector) {
+      status.textContent = 'BarcodeDetector 미지원 브라우저입니다.';
+      return;
     }
 
-    ocrCanvas.width  = w;
-    ocrCanvas.height = h;
-    ocrCtx.drawImage(img, 0, 0, w, h);
-
-    const imgData = ocrCtx.getImageData(0, 0, w, h);
-    const d = imgData.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-      const bin  = gray > 128 ? 255 : 0;
-      d[i] = d[i+1] = d[i+2] = bin;
-    }
-    ocrCtx.putImageData(imgData, 0, 0);
-  }
-
-  /* ── Worker 준비 대기 ── */
-  function waitForWorker() {
-    return new Promise(resolve => {
-      const check = setInterval(() => {
-        if (workerReady) { clearInterval(check); resolve(); }
-      }, 200);
-    });
-  }
-
-  /* ── Tesseract 동적 로드 + 초기화 ── */
-  function loadTesseractScript() {
-    return new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-      s.onload = resolve;
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  }
-
-  async function initWorker() {
-    try {
-      await loadTesseractScript();
-      worker = await Tesseract.createWorker('eng', 1, {
-        logger: m => {
-          if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract') {
-            statusMsg.textContent = `OCR 엔진 초기화 중... ${Math.round((m.progress || 0) * 100)}%`;
+    const loop = async () => {
+      if (!scanning) return;
+      if (video.readyState >= 2) {
+        try {
+          const results = await detector.detect(video);
+          if (results.length > 0) {
+            const val = results[0].rawValue.toUpperCase();
+            showResult(val);
+            return;
           }
-        },
+        } catch {}
+      }
+      animFrameId = requestAnimationFrame(loop);
+    };
+    animFrameId = requestAnimationFrame(loop);
+  }
+
+  async function initCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } },
+        audio: false,
       });
-      await worker.setParameters({
-        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-        tessedit_pageseg_mode: '7',
-      });
-      workerReady = true;
-      statusMsg.textContent = 'OCR 준비 완료';
-    } catch {
-      statusMsg.textContent = 'OCR 로드 실패 — 직접 입력을 사용하세요.';
+      video.srcObject = stream;
+      await video.play();
+
+      detector = await makeBarcodeDetector();
+
+      if (!detector) {
+        status.textContent = 'BarcodeDetector 미지원 — 직접 입력을 사용하세요.';
+        return;
+      }
+
+      startScan();
+    } catch (e) {
+      video.style.display = 'none';
+      document.getElementById('overlay').style.display = 'none';
+      errorMsg.textContent = e.name === 'NotAllowedError'
+        ? '카메라 권한이 거부되었습니다.\n브라우저 설정에서 카메라를 허용해 주세요.'
+        : `카메라를 열 수 없습니다: ${e.message}`;
+      errorView.classList.add('show');
     }
   }
 
-  initWorker();
+  initCamera();
 </script>
 </body>
 </html>
