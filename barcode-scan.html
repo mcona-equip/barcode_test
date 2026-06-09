@@ -1036,7 +1036,7 @@ pct >= 100 ? '#eab308'
 
   async function init() {
 
-    // 카메라 시작
+    // 1) 카메라 먼저 시작 (Tesseract 기다리지 않음)
 
     try {
 
@@ -1054,6 +1054,9 @@ pct >= 100 ? '#eab308'
       video.srcObject = stream;
 
       await video.play();
+
+      statusEl.textContent = 'OCR
+엔진 로딩 중... (최초 1회)';
 
     } catch (e) {
 
@@ -1079,19 +1082,12 @@ pct >= 100 ? '#eab308'
 
 
 
-    // Tesseract 초기화
-
-    statusEl.textContent = 'OCR
-엔진 로딩 중... (최초 1회)';
+    // 2) Tesseract 백그라운드 초기화 (카메라는 이미 보임)
 
     try {
 
       worker = await Tesseract.createWorker('eng',
 1, {
-
-        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-
-        corePath:   'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core-simd-lstm.wasm.js',
 
         logger: m => {
 
