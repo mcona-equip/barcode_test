@@ -323,11 +323,13 @@
     const cropW = bRect.width  * (vw / renderW);
     const cropH = bRect.height * (vh / renderH);
 
+    const textAreaY = cropY + cropH * 0.65;
+    const textAreaH = cropH * 0.35;
     // 업스케일(×2)해서 OCR 정확도 향상
     const scale = 2;
     canvas.width  = cropW * scale;
     canvas.height = cropH * scale;
-    ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, cropX,textAreaY, cropW, textAreaH, 0, 0, canvas.width, canvas.height);
 
     // 그레이스케일 + 대비 강화
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -358,9 +360,10 @@
           .replace(/\s+/g, '')
           .toUpperCase()
           .replace(/[^A-Z0-9\-:]/g, '');
+       const match = cleaned.match(/[A-Z0-9]{10,16}/);
 
-        if (cleaned.length >= 4) {
-          showResult(cleaned);
+        if (match) {
+          showResult(match[0]);
         }
       } catch (e) {
         console.warn('OCR 오류:', e);
