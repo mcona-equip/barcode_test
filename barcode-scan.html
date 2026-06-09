@@ -259,7 +259,7 @@
     if (typeof BarcodeDetector === 'undefined') return null;
     try {
       const supported = await BarcodeDetector.getSupportedFormats();
-      return new BarcodeDetector({ formats: supported.length ? supported : ['code_128','code_39'] });
+      return new BarcodeDetector({ formats: ['code_128'] });
     } catch { return null; }
   }
 
