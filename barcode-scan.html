@@ -674,7 +674,8 @@
 
     const sh = bRect.height * (vh / renderH);
 
-
+    const textY = sy + sh * 0.65;
+    const textH = sh * 0.35;
 
     // 2배 업스케일 + 그레이스케일 + 이진화
 
@@ -684,7 +685,7 @@
 
     ocrCanvas.height = sh * scale;
 
-    ocrCtx.drawImage(video, sx, sy, sw, sh, 0, 0, ocrCanvas.width, ocrCanvas.height);
+    ocrCtx.drawImage(video, sx, textY, sw, textH, 0, 0, ocrCanvas.width, ocrCanvas.height);
 
 
 
