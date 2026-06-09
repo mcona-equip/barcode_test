@@ -54,8 +54,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -55%);
-      width: min(80vw, 280px);
-      height: 120px;
+      width: min(90vw, 340px);
+      height: 60px;
       border: 2px solid rgba(255,255,255,0.8);
       border-radius: 8px;
       box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
@@ -328,7 +328,7 @@
     // 업스케일(×2)해서 OCR 정확도 향상
     const scale = 2;
     canvas.width  = cropW * scale;
-    canvas.height = cropH * scale;
+    canvas.height = textAreaH * scale;
     ctx.drawImage(video, cropX,textAreaY, cropW, textAreaH, 0, 0, canvas.width, canvas.height);
 
     // 그레이스케일 + 대비 강화
@@ -378,7 +378,7 @@
     // 1) 카메라 시작
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false,
       });
       video.srcObject = stream;
