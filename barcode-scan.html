@@ -87,20 +87,44 @@
       text-align: center;
     }
     #footer {
-      padding: 16px;
+      padding: 12px 16px;
       background: rgba(0,0,0,0.7);
-      text-align: center;
       flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-    #footer p { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 10px; }
+    #footer p { font-size: 12px; color: rgba(255,255,255,0.55); text-align: center; }
+    #btn-zxing {
+      background: #2563eb;
+      border: none;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 11px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+    }
+    #btn-zxing:active { background: #1d4ed8; }
+    #btn-zxing-hint {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      text-align: center;
+    }
+    #footer-row {
+      display: flex;
+      gap: 8px;
+    }
     #btn-manual {
       background: #374151;
       border: none;
       color: #fff;
       font-size: 14px;
-      padding: 10px 28px;
+      padding: 10px 0;
       border-radius: 8px;
       cursor: pointer;
+      flex: 1;
     }
     #result-overlay {
       display: none;
@@ -159,6 +183,46 @@
     }
     #error-view.show { display: flex; }
     #error-msg { font-size: 14px; color: rgba(255,255,255,0.7); }
+    /* ZXing 대기 화면 */
+    #zxing-wait {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 16px;
+      padding: 24px;
+      text-align: center;
+    }
+    #zxing-wait.show { display: flex; }
+    #zxing-wait p { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.6; }
+    #btn-zxing-cancel {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      font-size: 14px;
+      padding: 10px 28px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    /* ZXing 결과 수신 화면 */
+    #zxing-result {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      gap: 16px;
+      padding: 24px;
+      text-align: center;
+    }
+    #zxing-result.show { display: flex; }
+    #zxing-result-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #22c55e;
+      word-break: break-all;
+    }
   </style>
 </head>
 <body>
@@ -178,13 +242,22 @@
   </div>
   <div id="error-view">
     <p id="error-msg"></p>
-    <button id="btn-manual" onclick="closePopup()">닫기</button>
+    <button id="btn-manual-err" onclick="closePopup()">닫기</button>
+  </div>
+  <div id="zxing-wait">
+    <p>ZXing 앱에서 바코드를<br>스캔한 후 돌아오세요.</p>
+    <p style="font-size:12px;color:rgba(255,255,255,0.4);">스캔 완료 시 자동으로 결과가 입력됩니다.</p>
+    <button id="btn-zxing-cancel">취소 (카메라로 전환)</button>
   </div>
 </div>
 
 <div id="footer">
-  <p>바코드를 가이드 박스 안에 맞춰주세요</p>
-  <button id="btn-manual">직접 입력</button>
+  <p>바코드를 가이드 박스 안에 맞춰주세요 (또는 ZXing 앱 사용)</p>
+  <button id="btn-zxing">📷 ZXing 앱으로 스캔</button>
+  <div id="btn-zxing-hint">ZXing Barcode Scanner 앱이 설치되어 있어야 합니다</div>
+  <div id="footer-row">
+    <button id="btn-manual">직접 입력</button>
+  </div>
 </div>
 
 <div id="result-overlay">
@@ -194,21 +267,68 @@
   <button id="btn-retry">다시 스캔</button>
 </div>
 
+<!-- ZXing 콜백으로 열렸을 때: 전체 화면 교체 -->
+<div id="zxing-result">
+  <div style="font-size:16px;color:rgba(255,255,255,0.7);">스캔 완료</div>
+  <div id="zxing-result-value"></div>
+  <div style="font-size:13px;color:rgba(255,255,255,0.5);">자동으로 닫힙니다...</div>
+</div>
+
 <script>
-  const video = document.getElementById('video');
-  const status = document.getElementById('status');
-  const resultOverlay = document.getElementById('result-overlay');
-  const resultValue = document.getElementById('result-value');
-  const errorView = document.getElementById('error-view');
-  const errorMsg = document.getElementById('error-msg');
+  // ── ZXing 콜백 처리 (ZXing 앱이 이 URL을 code 파라미터와 함께 열었을 때) ──
+  (function () {
+    const params = new URLSearchParams(location.search);
+    const code = params.get('code');
+    if (!code) return;
 
-  let stream = null;
-  let detector = null;
-  let scanning = true;
-  let animFrameId = null;
-  let scannedValue = null;
+    // ZXing 콜백으로 열린 경우 — 결과 저장 후 닫기
+    const val = code.toUpperCase();
+    try {
+      localStorage.setItem('__barcode_scan_result__', val);
+    } catch (e) {}
 
-  const openerOrigin = document.referrer ? new URL(document.referrer).origin : '*';
+    // 기존 카메라 UI 숨기고 결과 표시
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('header').style.display = 'none';
+      document.getElementById('video-wrap').style.display = 'none';
+      document.getElementById('footer').style.display = 'none';
+      document.getElementById('result-overlay').style.display = 'none';
+
+      var resDiv = document.getElementById('zxing-result');
+      var resVal = document.getElementById('zxing-result-value');
+      resVal.textContent = val;
+      resDiv.classList.add('show');
+    });
+
+    // postMessage도 시도 (팝업 opener가 살아있을 경우)
+    window.addEventListener('DOMContentLoaded', function () {
+      if (window.opener) {
+        try {
+          var origin = document.referrer ? new URL(document.referrer).origin : '*';
+          window.opener.postMessage({ type: 'BARCODE_RESULT', barcode: val }, origin || '*');
+        } catch (e) {}
+      }
+      setTimeout(function () { window.close(); }, 1500);
+    });
+  })();
+
+  // ── 일반 카메라 스캔 모드 ──
+  var video = document.getElementById('video');
+  var status = document.getElementById('status');
+  var resultOverlay = document.getElementById('result-overlay');
+  var resultValue = document.getElementById('result-value');
+  var errorView = document.getElementById('error-view');
+  var errorMsg = document.getElementById('error-msg');
+  var zxingWait = document.getElementById('zxing-wait');
+
+  var stream = null;
+  var detector = null;
+  var scanning = true;
+  var animFrameId = null;
+  var scannedValue = null;
+  var zxingMode = false;
+
+  var openerOrigin = document.referrer ? new URL(document.referrer).origin : '*';
 
   function closePopup() {
     stopCamera();
@@ -218,14 +338,20 @@
   function stopCamera() {
     scanning = false;
     if (animFrameId) cancelAnimationFrame(animFrameId);
-    if (stream) stream.getTracks().forEach(t => t.stop());
+    if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
   }
 
   function sendResult(value) {
     stopCamera();
+    // postMessage (팝업 창 opener)
     if (window.opener) {
-      window.opener.postMessage({ type: 'BARCODE_RESULT', barcode: value }, openerOrigin === '' ? '*' : openerOrigin);
+      window.opener.postMessage(
+        { type: 'BARCODE_RESULT', barcode: value },
+        openerOrigin === '' ? '*' : openerOrigin
+      );
     }
+    // localStorage (ZXing 콜백 또는 새 탭 경유)
+    try { localStorage.setItem('__barcode_scan_result__', value); } catch (e) {}
     window.close();
   }
 
@@ -237,11 +363,11 @@
     resultOverlay.classList.add('show');
   }
 
-  document.getElementById('btn-confirm').addEventListener('click', () => {
+  document.getElementById('btn-confirm').addEventListener('click', function () {
     sendResult(scannedValue);
   });
 
-  document.getElementById('btn-retry').addEventListener('click', () => {
+  document.getElementById('btn-retry').addEventListener('click', function () {
     resultOverlay.classList.remove('show');
     scannedValue = null;
     scanning = true;
@@ -250,37 +376,83 @@
 
   document.getElementById('btn-close').addEventListener('click', closePopup);
 
-  document.getElementById('btn-manual').addEventListener('click', () => {
-    const val = prompt('S/N 또는 MAC 주소를 직접 입력하세요:');
+  document.getElementById('btn-manual').addEventListener('click', function () {
+    var val = prompt('S/N 또는 MAC 주소를 직접 입력하세요:');
     if (val && val.trim()) sendResult(val.trim().toUpperCase());
+  });
+
+  // ZXing 앱 실행 버튼
+  document.getElementById('btn-zxing').addEventListener('click', function () {
+    var callbackUrl = window.location.origin + '/barcode-scan.html?code={CODE}';
+    var zxingUrl = 'zxing://scan/?ret=' + encodeURIComponent(callbackUrl);
+
+    // 카메라 UI → 대기 UI 전환
+    document.getElementById('video-wrap').querySelector('#overlay').style.display = 'none';
+    video.style.display = 'none';
+    zxingWait.classList.add('show');
+    document.getElementById('footer').style.display = 'none';
+    zxingMode = true;
+    stopCamera();
+
+    // ZXing 앱 실행
+    window.location.href = zxingUrl;
+
+    // localStorage 폴링 (ZXing이 같은 팝업 창에서 콜백을 못 여는 경우 대비)
+    var pollCount = 0;
+    var poll = setInterval(function () {
+      pollCount++;
+      var result = null;
+      try { result = localStorage.getItem('__barcode_scan_result__'); } catch (e) {}
+      if (result) {
+        clearInterval(poll);
+        try { localStorage.removeItem('__barcode_scan_result__'); } catch (e) {}
+        sendResult(result);
+      }
+      if (pollCount > 600) clearInterval(poll); // 1분 후 포기
+    }, 100);
+  });
+
+  // ZXing 대기 취소 → 카메라로 복귀
+  document.getElementById('btn-zxing-cancel').addEventListener('click', function () {
+    zxingMode = false;
+    zxingWait.classList.remove('show');
+    video.style.display = '';
+    document.getElementById('video-wrap').querySelector('#overlay').style.display = '';
+    document.getElementById('footer').style.display = '';
+    scanning = true;
+    initCamera();
   });
 
   async function makeBarcodeDetector() {
     if (typeof BarcodeDetector === 'undefined') return null;
     try {
-      const supported = await BarcodeDetector.getSupportedFormats();
-      return new BarcodeDetector({ formats: supported.length ? supported : ['code_128','code_39','ean_13','ean_8','qr_code','data_matrix','upc_a','upc_e'] });
-    } catch { return null; }
+      var supported = await BarcodeDetector.getSupportedFormats();
+      return new BarcodeDetector({
+        formats: supported.length
+          ? supported
+          : ['code_128', 'code_39', 'ean_13', 'ean_8', 'qr_code', 'data_matrix', 'upc_a', 'upc_e'],
+      });
+    } catch (e) { return null; }
   }
 
   async function startScan() {
     status.textContent = '스캔 중...';
     if (!detector) {
-      status.textContent = 'BarcodeDetector 미지원 브라우저입니다.';
+      status.textContent = 'BarcodeDetector 미지원 — ZXing 앱 또는 직접 입력을 사용하세요.';
       return;
     }
 
-    const loop = async () => {
+    var loop = async function () {
       if (!scanning) return;
       if (video.readyState >= 2) {
         try {
-          const results = await detector.detect(video);
+          var results = await detector.detect(video);
           if (results.length > 0) {
-            const val = results[0].rawValue.toUpperCase();
+            var val = results[0].rawValue.toUpperCase();
             showResult(val);
             return;
           }
-        } catch {}
+        } catch (e) {}
       }
       animFrameId = requestAnimationFrame(loop);
     };
@@ -288,6 +460,9 @@
   }
 
   async function initCamera() {
+    // ZXing 콜백으로 열린 경우 카메라 초기화 생략
+    if (new URLSearchParams(location.search).get('code')) return;
+
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } },
@@ -299,7 +474,7 @@
       detector = await makeBarcodeDetector();
 
       if (!detector) {
-        status.textContent = 'BarcodeDetector 미지원 — 직접 입력을 사용하세요.';
+        status.textContent = 'BarcodeDetector 미지원 — ZXing 앱 또는 직접 입력을 사용하세요.';
         return;
       }
 
@@ -309,7 +484,7 @@
       document.getElementById('overlay').style.display = 'none';
       errorMsg.textContent = e.name === 'NotAllowedError'
         ? '카메라 권한이 거부되었습니다.\n브라우저 설정에서 카메라를 허용해 주세요.'
-        : `카메라를 열 수 없습니다: ${e.message}`;
+        : '카메라를 열 수 없습니다: ' + e.message;
       errorView.classList.add('show');
     }
   }
