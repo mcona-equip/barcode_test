@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>바코드 스캔</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: rgba(0,0,0,0.7);
+      z-index: 10;
+      flex-shrink: 0;
+    }
+    #header h1 { font-size: 16px; font-weight: 600; }
+    #btn-close {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: #fff;
+      font-size: 14px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+    #video-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    #scan-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -55%);
+      width: min(80vw, 280px);
+      height: 120px;
+      border: 2px solid rgba(255,255,255,0.8);
+      border-radius: 8px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+    }
+    #scan-line {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #22c55e, transparent);
+      animation: scan 1.8s ease-in-out infinite;
+    }
+    @keyframes scan {
+      0%   { top: 8px; opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { top: calc(100% - 10px); opacity: 0; }
+    }
+    #status {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.65);
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      white-space: nowrap;
+      text-align: center;
+    }
+    #footer {
+      padding: 16px;
+      background: rgba(0,0,0,0.7);
+      text-align: center;
+      flex-shrink: 0;
+    }
+    #footer p { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 10px; }
+    #btn-manual {
+      background: #374151;
+      border: none;
+      color: #fff;
+      font-size: 14px;
+      padding: 10px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #result-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 50;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      gap: 16px;
+    }
+    #result-overlay.show { display: flex; }
+    #result-value {
+      font-size: 22px;
+      font-weight: 700;
+      word-break: break-all;
+      text-align: center;
+      color: #22c55e;
+    }
+    #result-label { font-size: 12px; color: rgba(255,255,255,0.5); }
+    #btn-confirm {
+      margin-top: 8px;
+      background: #22c55e;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 14px 48px;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      max-width: 280px;
+    }
+    #btn-retry {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      font-size: 14px;
+      padding: 10px 28px;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      max-width: 280px;
+    }
+    #error-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+    #error-view.show { display: flex; }
+    #error-msg { font-size: 14px; color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <h1>바코드 스캔</h1>
+  <button id="btn-close">닫기</button>
+</div>
+
+<div id="video-wrap">
+  <video id="video" autoplay playsinline muted></video>
+  <div id="overlay">
+    <div id="scan-box">
+      <div id="scan-line"></div>
+    </div>
+    <div id="status">카메라 초기화 중...</div>
+  </div>
+  <div id="error-view">
+    <p id="error-msg"></p>
+    <button id="btn-manual" onclick="closePopup()">닫기</button>
+  </div>
+</div>
+
+<div id="footer">
+  <p>바코드를 가이드 박스 안에 맞춰주세요</p>
+  <button id="btn-manual">직접 입력</button>
+</div>
+
+<div id="result-overlay">
+  <div id="result-label">스캔 결과</div>
+  <div id="result-value"></div>
+  <button id="btn-confirm">확인 (이 값으로 조회)</button>
+  <button id="btn-retry">다시 스캔</button>
+</div>
+
+<script>
+  const video = document.getElementById('video');
+  const status = document.getElementById('status');
+  const resultOverlay = document.getElementById('result-overlay');
+  const resultValue = document.getElementById('result-value');
+  const errorView = document.getElementById('error-view');
+  const errorMsg = document.getElementById('error-msg');
+
+  let stream = null;
+  let detector = null;
+  let scanning = true;
+  let animFrameId = null;
+  let scannedValue = null;
+
+  const openerOrigin = document.referrer ? new URL(document.referrer).origin : '*';
+
+  function closePopup() {
+    stopCamera();
+    window.close();
+  }
+
+  function stopCamera() {
+    scanning = false;
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+    if (stream) stream.getTracks().forEach(t => t.stop());
+  }
+
+  function sendResult(value) {
+    stopCamera();
+    if (window.opener) {
+      window.opener.postMessage({ type: 'BARCODE_RESULT', barcode: value }, openerOrigin === '' ? '*' : openerOrigin);
+    }
+    window.close();
+  }
+
+  function showResult(value) {
+    scanning = false;
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+    scannedValue = value;
+    resultValue.textContent = value;
+    resultOverlay.classList.add('show');
+  }
+
+  document.getElementById('btn-confirm').addEventListener('click', () => {
+    sendResult(scannedValue);
+  });
+
+  document.getElementById('btn-retry').addEventListener('click', () => {
+    resultOverlay.classList.remove('show');
+    scannedValue = null;
+    scanning = true;
+    startScan();
+  });
+
+  document.getElementById('btn-close').addEventListener('click', closePopup);
+
+  document.getElementById('btn-manual').addEventListener('click', () => {
+    const val = prompt('S/N 또는 MAC 주소를 직접 입력하세요:');
+    if (val && val.trim()) sendResult(val.trim().toUpperCase());
+  });
+
+  async function makeBarcodeDetector() {
+    if (typeof BarcodeDetector === 'undefined') return null;
+    try {
+      const supported = await BarcodeDetector.getSupportedFormats();
+      return new BarcodeDetector({ formats: supported.length ? supported : ['code_128','code_39'] });
+    } catch { return null; }
+  }
+
+  async function startScan() {
+    status.textContent = '스캔 중...';
+    if (!detector) {
+      status.textContent = 'BarcodeDetector 미지원 브라우저입니다.';
+      return;
+    }
+
+    const loop = async () => {
+      if (!scanning) return;
+      if (video.readyState >= 2) {
+        try {
+          const results = await detector.detect(video);
+          if (results.length > 0) {
+            const val = results[0].rawValue.toUpperCase();
+            showResult(val);
+            return;
+          }
+        } catch {}
+      }
+      animFrameId = requestAnimationFrame(loop);
+    };
+    animFrameId = requestAnimationFrame(loop);
+  }
+
+  async function initCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      video.srcObject = stream;
+      await video.play();
+
+      detector = await makeBarcodeDetector();
+
+      if (!detector) {
+        status.textContent = 'BarcodeDetector 미지원 — 직접 입력을 사용하세요.';
+        return;
+      }
+
+      startScan();
+    } catch (e) {
+      video.style.display = 'none';
+      document.getElementById('overlay').style.display = 'none';
+      errorMsg.textContent = e.name === 'NotAllowedError'
+        ? '카메라 권한이 거부되었습니다.\n브라우저 설정에서 카메라를 허용해 주세요.'
+        : `카메라를 열 수 없습니다: ${e.message}`;
+      errorView.classList.add('show');
+    }
+  }
+
+  initCamera();
+</script>
+</body>
+</html>
