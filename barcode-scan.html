@@ -668,24 +668,27 @@
 
     const sx = (bRect.left - vRect.left + offsetX) * (vw / renderW);
 
-    const sy = (bRect.top  - vRect.top  + offsetY) * (vh / renderH);
-
     const sw = bRect.width  * (vw / renderW);
 
     const sh = bRect.height * (vh / renderH);
 
-    const textY = sy + sh * 0.65;
+    // 하단 30%만 크롭 (바코드 막대기 제외, 숫자/문자 영역만)
+
     const textH = sh * 0.35;
+
+    const sy = ((bRect.top - vRect.top + offsetY) * (vh / renderH)) + (sh - textH);
+
+
 
     // 2배 업스케일 + 그레이스케일 + 이진화
 
-    const scale = 2.5;
+    const scale = 4;
 
     ocrCanvas.width  = sw * scale;
 
-    ocrCanvas.height = sh * scale;
+    ocrCanvas.height = textH * scale;
 
-    ocrCtx.drawImage(video, sx, textY, sw, textH, 0, 0, ocrCanvas.width, ocrCanvas.height);
+    ocrCtx.drawImage(video, sx, sy, sw, textH, 0, 0, ocrCanvas.width, ocrCanvas.height);
 
 
 
@@ -737,7 +740,7 @@
 
         .toUpperCase()
 
-        .replace(/[^A-Z0-9\-:]/g, '');
+        .replace(/[^A-Z0-9]/g, '');
 
 
 
@@ -953,7 +956,7 @@
 
       await worker.setParameters({
 
-        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-',
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
 
         tessedit_pageseg_mode: '7',
 
